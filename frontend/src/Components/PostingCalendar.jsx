@@ -63,6 +63,8 @@ const PostingCalendar = () => {
   const [postText, setPostText] = useState('');
   const [frequency, setFrequency] = useState('once');
   const [tabValue, setTabValue] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editPostIndex, setEditPostIndex] = useState(null);
 
   // Get current month and year
   const currentMonth = currentDate.getMonth();
@@ -109,6 +111,8 @@ const PostingCalendar = () => {
     setSelectedDate(dateToUse);
     setPostText('');
     setFrequency('once');
+    setIsEditing(false);
+    setEditPostIndex(null);
     setIsModalOpen(true);
   };
 
@@ -117,6 +121,8 @@ const PostingCalendar = () => {
     setIsModalOpen(false);
     setSelectedDate(null);
     setPostText('');
+    setIsEditing(false);
+    setEditPostIndex(null);
   };
 
   // Handle saving a post
@@ -130,36 +136,47 @@ const PostingCalendar = () => {
     
     const dateKey = selectedDate.toISOString().split('T')[0];
     
-    // Handle different frequency options
-    if (frequency === 'once') {
-      setPosts(prevPosts => ({
-        ...prevPosts,
-        [dateKey]: [...(prevPosts[dateKey] || []), postText]
-      }));
-    } else if (frequency === 'weekly') {
-      const newPosts = { ...posts };
-      let currentPostDate = new Date(selectedDate);
-      
-      // Add weekly posts for the next 4 weeks
-      for (let i = 0; i < 4; i++) {
-        const dateStr = currentPostDate.toISOString().split('T')[0];
-        newPosts[dateStr] = [...(newPosts[dateStr] || []), postText];
-        currentPostDate.setDate(currentPostDate.getDate() + 7);
+    // If we're editing an existing post
+    if (isEditing && editPostIndex !== null) {
+      setPosts(prevPosts => {
+        const updatedPosts = { ...prevPosts };
+        const postsList = [...updatedPosts[dateKey]];
+        postsList[editPostIndex] = postText;
+        updatedPosts[dateKey] = postsList;
+        return updatedPosts;
+      });
+    } else {
+      // Handle different frequency options for new posts
+      if (frequency === 'once') {
+        setPosts(prevPosts => ({
+          ...prevPosts,
+          [dateKey]: [...(prevPosts[dateKey] || []), postText]
+        }));
+      } else if (frequency === 'weekly') {
+        const newPosts = { ...posts };
+        let currentPostDate = new Date(selectedDate);
+        
+        // Add weekly posts for the next 4 weeks
+        for (let i = 0; i < 4; i++) {
+          const dateStr = currentPostDate.toISOString().split('T')[0];
+          newPosts[dateStr] = [...(newPosts[dateStr] || []), postText];
+          currentPostDate.setDate(currentPostDate.getDate() + 7);
+        }
+        
+        setPosts(newPosts);
+      } else if (frequency === 'monthly') {
+        const newPosts = { ...posts };
+        let currentPostDate = new Date(selectedDate);
+        
+        // Add monthly posts for the next 3 months
+        for (let i = 0; i < 3; i++) {
+          const dateStr = currentPostDate.toISOString().split('T')[0];
+          newPosts[dateStr] = [...(newPosts[dateStr] || []), postText];
+          currentPostDate.setMonth(currentPostDate.getMonth() + 1);
+        }
+        
+        setPosts(newPosts);
       }
-      
-      setPosts(newPosts);
-    } else if (frequency === 'monthly') {
-      const newPosts = { ...posts };
-      let currentPostDate = new Date(selectedDate);
-      
-      // Add monthly posts for the next 3 months
-      for (let i = 0; i < 3; i++) {
-        const dateStr = currentPostDate.toISOString().split('T')[0];
-        newPosts[dateStr] = [...(newPosts[dateStr] || []), postText];
-        currentPostDate.setMonth(currentPostDate.getMonth() + 1);
-      }
-      
-      setPosts(newPosts);
     }
     
     handleCloseModal();
@@ -210,6 +227,24 @@ const PostingCalendar = () => {
     });
   };
 
+  // Open edit modal for an existing post
+  const handleEditPost = (date, index) => {
+    // Check if the date is in the past
+    if (isDateInPast(date)) {
+      return; // Don't allow editing posts from past dates
+    }
+    
+    const dateKey = date.toISOString().split('T')[0];
+    const postContent = posts[dateKey][index];
+    
+    setSelectedDate(date);
+    setPostText(postContent);
+    setFrequency('once'); // Default to once when editing
+    setIsEditing(true);
+    setEditPostIndex(index);
+    setIsModalOpen(true);
+  };
+
   // Generate calendar days
   const renderCalendarDays = () => {
     const calendarDays = [];
@@ -240,7 +275,7 @@ const PostingCalendar = () => {
         <div 
           key={`current-${day}`} 
           className={`calendar-day ${hasPost ? 'has-post' : ''} ${isPastDate ? 'past-date' : ''} ${isToday ? 'today' : ''}`}
-          onClick={() => !isPastDate && handleOpenModal(date)}
+          onClick={() => !isPastDate && !hasPost && handleOpenModal(date)}
         >
           <div className={`day-number ${isToday ? 'today-marker' : ''} ${day === 24 ? 'has-event' : ''}`}>
             {day}
@@ -254,7 +289,14 @@ const PostingCalendar = () => {
           {hasPost && (
             <div className="posts-container">
               {posts[dateKey].map((post, index) => (
-                <div key={index} className="post-item">
+                <div 
+                  key={index} 
+                  className="post-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    !isPastDate && handleEditPost(date, index);
+                  }}
+                >
                   <Chip 
                     label={post.length > 20 ? `${post.substring(0, 20)}...` : post} 
                     size="small" 
@@ -263,6 +305,7 @@ const PostingCalendar = () => {
                       e.stopPropagation();
                       handleDeletePost(dateKey, index);
                     } : undefined}
+                    clickable={!isPastDate}
                   />
                 </div>
               ))}
@@ -426,9 +469,11 @@ const PostingCalendar = () => {
         <Paper className="modal-content">
           <div className="modal-header">
             <Typography id="post-modal-title" variant="h6">
-              {selectedDate 
-                ? `Create Post for ${selectedDate.toLocaleDateString()}`
-                : 'Create New Post'
+              {isEditing 
+                ? `Edit Post for ${selectedDate?.toLocaleDateString()}`
+                : selectedDate 
+                  ? `Create Post for ${selectedDate.toLocaleDateString()}`
+                  : 'Create New Post'
               }
             </Typography>
             <IconButton onClick={handleCloseModal}>
@@ -465,19 +510,21 @@ const PostingCalendar = () => {
               variant="outlined"
             />
             
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="frequency-label">Posting Frequency</InputLabel>
-              <Select
-                labelId="frequency-label"
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-                label="Posting Frequency"
-              >
-                <MenuItem value="once">Once</MenuItem>
-                <MenuItem value="weekly">Weekly (4 weeks)</MenuItem>
-                <MenuItem value="monthly">Monthly (3 months)</MenuItem>
-              </Select>
-            </FormControl>
+            {!isEditing && (
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="frequency-label">Posting Frequency</InputLabel>
+                <Select
+                  labelId="frequency-label"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  label="Posting Frequency"
+                >
+                  <MenuItem value="once">Once</MenuItem>
+                  <MenuItem value="weekly">Weekly (4 weeks)</MenuItem>
+                  <MenuItem value="monthly">Monthly (3 months)</MenuItem>
+                </Select>
+              </FormControl>
+            )}
           </div>
           
           <div className="modal-footer">
@@ -488,7 +535,7 @@ const PostingCalendar = () => {
               onClick={handleSavePost}
               disabled={!postText.trim() || !selectedDate}
             >
-              Save Post
+              {isEditing ? 'Update Post' : 'Save Post'}
             </Button>
           </div>
         </Paper>
@@ -684,6 +731,10 @@ const PostingCalendar = () => {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+        
+        .post-item:hover {
+          cursor: pointer;
         }
         
         .add-post-icon {
