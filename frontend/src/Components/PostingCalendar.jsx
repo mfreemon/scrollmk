@@ -466,7 +466,6 @@ const PostingCalendar = () => {
     setSelectedDate(newDate);
   };
 
-  console.log(selectedDate)
   const postModalProps = {
     captionPrompt,
     isModalOpen,
@@ -489,6 +488,7 @@ const PostingCalendar = () => {
     handleSavePost,
     handleCloseModal
   };
+  
   return (
     <div className="calendar-container">
       <div className="top-navigation">

@@ -1,18 +1,19 @@
 import { 
-    Modal, 
-    Paper, 
-    Typography, 
-    IconButton,
-    TextField,
-    Divider,
-    Button,
-    CircularProgress,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Grid
-  } from '@mui/material';
+  Modal, 
+  Paper, 
+  Typography, 
+  IconButton,
+  TextField,
+  Divider,
+  Button,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid
+} from '@mui/material';
+
 import CloseIcon from '@mui/icons-material/Close';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import TitleIcon from '@mui/icons-material/Title';
@@ -41,9 +42,8 @@ const PostModal = ({
   handleCloseModal,
   setPostText
 }) => {
-  console.log(selectedDate)
-  return (
 
+  return (
     <Modal
       className='scroll-mk-modal'
       open={isModalOpen}
