@@ -524,6 +524,8 @@ const PostingCalendar = () => {
           posts={posts}
           isDateInPast={isDateInPast}
           handleOpenModal={handleOpenModal}
+          handleEditPost={handleEditPost}
+          handleDeletePost={handleDeletePost}
         />
       </div>
       

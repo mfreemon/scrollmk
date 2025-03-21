@@ -7,9 +7,10 @@ const CalendarDays = ({
   currentYear, 
   posts,
   isDateInPast,
-  handleOpenModal
+  handleOpenModal,
+  handleEditPost,
+  handleDeletePost
 }) => {
-  console.log(currentMonth)
   const calendarDays = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
