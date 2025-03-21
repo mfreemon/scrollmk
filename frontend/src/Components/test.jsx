@@ -15,9 +15,7 @@ import {
   Tabs,
   Tab,
   OutlinedInput,
-  InputAdornment,
-  Divider,
-  Grid
+  InputAdornment
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -30,9 +28,7 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import TagIcon from '@mui/icons-material/Tag';
 import LaptopIcon from '@mui/icons-material/Laptop';
-import ImageIcon from '@mui/icons-material/Image';
 import './calendar.scss';
-import PostModal from './Modal';
 
 // Helper function to get days in a month
 const getDaysInMonth = (year, month) => {
@@ -60,73 +56,16 @@ const getNextMonthDates = (year, month, daysInMonth, firstDayOfMonth) => {
   return Array.from({ length: nextMonthDays }, (_, i) => i + 1);
 };
 
-// Simulate caption generation - in a real app this would call an API
-const generateCaption = async (prompt) => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Sample captions based on prompts
-  const captions = {
-    'product': [
-      "Elevate your routine with our latest innovation. #GameChanger",
-      "Quality meets design. Discover the difference today.",
-      "The perfect addition to your collection. Now available!"
-    ],
-    'announcement': [
-      "Exciting news! We're thrilled to announce our newest venture.",
-      "Mark your calendars! Something big is coming your way soon.",
-      "The wait is over. Introducing our latest offering!"
-    ],
-    'engagement': [
-      "What's your favorite way to use our products? Share below!",
-      "Tag someone who needs to see this in their life!",
-      "Double tap if you're as excited as we are!"
-    ],
-    'default': [
-      "Innovation meets excellence. The journey continues.",
-      "Crafted with care, designed for you.",
-      "Every detail matters. Experience the difference."
-    ]
-  };
-
-  // Select random caption from the appropriate category or default
-  const category = prompt.toLowerCase().includes('product') ? 'product' :
-                  prompt.toLowerCase().includes('announce') ? 'announcement' :
-                  prompt.toLowerCase().includes('engage') ? 'engagement' : 'default';
-  
-  const randomIndex = Math.floor(Math.random() * captions[category].length);
-  return captions[category][randomIndex];
-};
-
-// Simulate image generation - in a real app this would call an API
-const generateImage = async (prompt) => {
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // Return a placeholder image URL
-  // In a real application, this would return a generated image
-  return `https://placehold.co/600x400`;
-};
-
 const PostingCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [posts, setPosts] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
   const [postText, setPostText] = useState('');
   const [frequency, setFrequency] = useState('once');
   const [tabValue, setTabValue] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editPostIndex, setEditPostIndex] = useState(null);
-  
-  // New state for caption and image generation
-  const [captionPrompt, setCaptionPrompt] = useState('');
-  const [generatedCaption, setGeneratedCaption] = useState('');
-  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
-  
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [generatedImage, setGeneratedImage] = useState('');
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   // Get current month and year
   const currentMonth = currentDate.getMonth();
@@ -176,12 +115,6 @@ const PostingCalendar = () => {
     setIsEditing(false);
     setEditPostIndex(null);
     setIsModalOpen(true);
-    
-    // Reset generation fields
-    setCaptionPrompt('');
-    setGeneratedCaption('');
-    setImagePrompt('');
-    setGeneratedImage('');
   };
 
   // Close modal
@@ -191,12 +124,6 @@ const PostingCalendar = () => {
     setPostText('');
     setIsEditing(false);
     setEditPostIndex(null);
-    
-    // Reset generation fields
-    setCaptionPrompt('');
-    setGeneratedCaption('');
-    setImagePrompt('');
-    setGeneratedImage('');
   };
 
   // Handle saving a post
@@ -210,19 +137,12 @@ const PostingCalendar = () => {
     
     const dateKey = selectedDate.toISOString().split('T')[0];
     
-    // Create post object with content and generated media
-    const postData = {
-      text: postText,
-      caption: generatedCaption || '',
-      image: generatedImage || ''
-    };
-    
     // If we're editing an existing post
     if (isEditing && editPostIndex !== null) {
       setPosts(prevPosts => {
         const updatedPosts = { ...prevPosts };
         const postsList = [...updatedPosts[dateKey]];
-        postsList[editPostIndex] = postData;
+        postsList[editPostIndex] = postText;
         updatedPosts[dateKey] = postsList;
         return updatedPosts;
       });
@@ -231,7 +151,7 @@ const PostingCalendar = () => {
       if (frequency === 'once') {
         setPosts(prevPosts => ({
           ...prevPosts,
-          [dateKey]: [...(prevPosts[dateKey] || []), postData]
+          [dateKey]: [...(prevPosts[dateKey] || []), postText]
         }));
       } else if (frequency === 'weekly') {
         const newPosts = { ...posts };
@@ -240,7 +160,7 @@ const PostingCalendar = () => {
         // Add weekly posts for the next 4 weeks
         for (let i = 0; i < 4; i++) {
           const dateStr = currentPostDate.toISOString().split('T')[0];
-          newPosts[dateStr] = [...(newPosts[dateStr] || []), postData];
+          newPosts[dateStr] = [...(newPosts[dateStr] || []), postText];
           currentPostDate.setDate(currentPostDate.getDate() + 7);
         }
         
@@ -252,7 +172,7 @@ const PostingCalendar = () => {
         // Add monthly posts for the next 3 months
         for (let i = 0; i < 3; i++) {
           const dateStr = currentPostDate.toISOString().split('T')[0];
-          newPosts[dateStr] = [...(newPosts[dateStr] || []), postData];
+          newPosts[dateStr] = [...(newPosts[dateStr] || []), postText];
           currentPostDate.setMonth(currentPostDate.getMonth() + 1);
         }
         
@@ -288,6 +208,7 @@ const PostingCalendar = () => {
 
   // Delete a post
   const handleDeletePost = (dateKey, index) => {
+    console.log('delet called')
     // Convert dateKey to Date object for past date check
     const postDate = new Date(dateKey);
         
@@ -305,68 +226,20 @@ const PostingCalendar = () => {
 
   // Open edit modal for an existing post
   const handleEditPost = (date, index) => {
+    // Check if the date is in the past
+    // if (isDateInPast(date)) {
+    //   return; // Don't allow editing posts from past dates
+    // }
+    
     const dateKey = date.toISOString().split('T')[0];
-    const postData = posts[dateKey][index];
+    const postContent = posts[dateKey][index];
     
     setSelectedDate(date);
-    
-    // Handle both string and object post formats for backward compatibility
-    if (typeof postData === 'string') {
-      setPostText(postData);
-      setGeneratedCaption('');
-      setGeneratedImage('');
-    } else {
-      setPostText(postData.text || '');
-      setGeneratedCaption(postData.caption || '');
-      setGeneratedImage(postData.image || '');
-    }
-    
+    setPostText(postContent);
     setFrequency('once'); // Default to once when editing
     setIsEditing(true);
     setEditPostIndex(index);
     setIsModalOpen(true);
-  };
-
-  // Generate caption based on prompt
-  const handleGenerateCaption = async () => {
-    if (!captionPrompt.trim()) return;
-    
-    setIsGeneratingCaption(true);
-    try {
-      const caption = await generateCaption(captionPrompt);
-      setGeneratedCaption(caption);
-      
-      // Automatically add the caption to the post text if empty
-      if (!postText.trim()) {
-        setPostText(caption);
-      }
-    } catch (error) {
-      console.error('Error generating caption:', error);
-    } finally {
-      setIsGeneratingCaption(false);
-    }
-  };
-
-  // Generate image based on prompt
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) return;
-    
-    setIsGeneratingImage(true);
-    try {
-      const imageUrl = await generateImage(imagePrompt);
-      setGeneratedImage(imageUrl);
-    } catch (error) {
-      console.error('Error generating image:', error);
-    } finally {
-      setIsGeneratingImage(false);
-    }
-  };
-
-  // Apply generated caption to post text
-  const handleApplyCaption = () => {
-    if (generatedCaption) {
-      setPostText(generatedCaption);
-    }
   };
 
   // Generate calendar days
@@ -403,46 +276,44 @@ const PostingCalendar = () => {
         >
           <div className={`day-number ${isToday ? 'today-marker' : ''}`}>
             {day}
+            {/* {isPastDate && (
+              <Tooltip title="Past dates cannot be edited">
+                <LockIcon fontSize="small" className="lock-icon" />
+              </Tooltip>
+            )} */}
           </div>
           
           {hasPost && (
             <div className="posts-container">
-              {posts[dateKey].map((post, index) => {
-                // Handle both string and object post formats
-                const postContent = typeof post === 'string' ? post : post.text;
-                const hasMedia = typeof post === 'object' && (post.image || post.caption);
-                
-                return (
-                  <div 
-                    key={index} 
-                    className="post-item"
-                    onClick={(e) => {
+              {posts[dateKey].map((post, index) => (
+                <div 
+                  key={index} 
+                  className="post-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    !isPastDate && handleEditPost(date, index);
+                  }}
+                >
+                  <Chip 
+                    label={post.length > 20 ? `${post.substring(0, 20)}...` : post} 
+                    size="small" 
+                    color={isPastDate ? "default" : "primary"} 
+                    onDelete={!isPastDate ? (e) => {
                       e.stopPropagation();
-                      !isPastDate && handleEditPost(date, index);
-                    }}
-                  >
-                    <Chip 
-                      label={postContent.length > 20 ? `${postContent.substring(0, 20)}...` : postContent} 
-                      size="small" 
-                      color={isPastDate ? "default" : "primary"} 
-                      icon={hasMedia ? <ImageIcon fontSize="small" /> : undefined}
-                      onDelete={!isPastDate ? (e) => {
-                        e.stopPropagation();
-                        handleDeletePost(dateKey, index);
-                      } : undefined}
-                      clickable={!isPastDate}
-                    />
-                  </div>
-                );
-              })}
+                      handleDeletePost(dateKey, index);
+                    } : undefined}
+                    clickable={!isPastDate}
+                  />
+                </div>
+              ))}
             </div>
           )}
           
-          {/* {(day === 25) && (
+          {(day === 25) && (
             <div className="add-post-icon">
               <AddIcon />
             </div>
-          )} */}
+          )}
         </div>
       );
     }
@@ -472,29 +343,6 @@ const PostingCalendar = () => {
     setSelectedDate(newDate);
   };
 
-  console.log(selectedDate)
-  const postModalProps = {
-    captionPrompt,
-    isModalOpen,
-    handleCloseModal,
-    isEditing,
-    selectedDate,
-    handleDateChange,
-    postText,
-    handleGenerateCaption,
-    handleGenerateImage,
-    isGeneratingCaption,
-    generatedCaption,
-    imagePrompt,
-    isGeneratingImage,
-    generatedImage,
-    frequency,
-    setPostText,
-    setCaptionPrompt,
-    setImagePrompt,
-    handleSavePost,
-    handleCloseModal
-  };
   return (
     <div className="calendar-container">
       <div className="top-navigation">
@@ -611,7 +459,87 @@ const PostingCalendar = () => {
         {renderCalendarDays()}
       </div>
       
-      <PostModal {...postModalProps}/>
+      <Modal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        aria-labelledby="post-modal-title"
+      >
+        <Paper className="modal-content">
+          <div className="modal-header">
+            <Typography id="post-modal-title" variant="h6">
+              {isEditing 
+                ? `Edit Post for ${selectedDate?.toLocaleDateString()}`
+                : selectedDate 
+                  ? `Create Post for ${selectedDate.toLocaleDateString()}`
+                  : 'Create New Post'
+              }
+            </Typography>
+            <IconButton onClick={handleCloseModal}>
+              <CloseIcon />
+            </IconButton>
+          </div>
+          
+          <div className="modal-body">
+            {!selectedDate && (
+              <TextField
+                label="Select Date"
+                type="date"
+                value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                onChange={handleDateChange}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  min: new Date().toISOString().split('T')[0] // Set min date to today
+                }}
+              />
+            )}
+            
+            <TextField
+              label="Post Content"
+              multiline
+              rows={4}
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+              fullWidth
+              margin="normal"
+              variant="outlined"
+            />
+            
+            {!isEditing && (
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="frequency-label">Posting Frequency</InputLabel>
+                <Select
+                  labelId="frequency-label"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  label="Posting Frequency"
+                >
+                  <MenuItem value="once">Once</MenuItem>
+                  <MenuItem value="weekly">Weekly (4 weeks)</MenuItem>
+                  <MenuItem value="monthly">Monthly (3 months)</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          </div>
+          
+          <div className="modal-footer">
+            <Button onClick={handleCloseModal}>Cancel</Button>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleSavePost}
+              disabled={!postText.trim() || !selectedDate}
+            >
+              {isEditing ? 'Update Post' : 'Save Post'}
+            </Button>
+          </div>
+        </Paper>
+      </Modal>
+      
+
     </div>
   );
 };
