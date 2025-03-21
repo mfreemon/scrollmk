@@ -1,4 +1,4 @@
-# Scrollmarkl
+# Scrollmark
 
 ## To Run project
 
