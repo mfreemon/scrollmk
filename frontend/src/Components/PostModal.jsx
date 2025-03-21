@@ -40,7 +40,8 @@ const PostModal = ({
   frequency,
   handleSavePost,
   handleCloseModal,
-  setPostText
+  setPostText,
+  setFrequency
 }) => {
 
   return (

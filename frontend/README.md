@@ -1,6 +1,6 @@
 # Scrollmark
 
-## To Run project
+## To run project
 
 - Clone repo to local
 - run `npm install`
