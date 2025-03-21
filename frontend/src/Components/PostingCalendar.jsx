@@ -437,12 +437,6 @@ const PostingCalendar = () => {
               })}
             </div>
           )}
-          
-          {/* {(day === 25) && (
-            <div className="add-post-icon">
-              <AddIcon />
-            </div>
-          )} */}
         </div>
       );
     }
